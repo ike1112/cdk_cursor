@@ -38,6 +38,14 @@ class VPCStack(Stack):
             ]
         )
 
+        # Add tags to VPC
+        self.vpc.add_tags({
+            "Environment": "Production",
+            "Project": "VPC Infrastructure",
+            "ManagedBy": "CDK Pipeline",
+            "LastModified": "2024-03-19"
+        })
+
         # Output the VPC ID
         CfnOutput(
             self,
