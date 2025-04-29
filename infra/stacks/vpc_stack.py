@@ -38,6 +38,56 @@ class VPCStack(Stack):
             ]
         )
 
+        # Create ALB Security Group
+        self.alb_security_group = ec2.SecurityGroup(
+            self, "ALBSecurityGroup",
+            vpc=self.vpc,
+            description="Security group for Application Load Balancer",
+            allow_all_outbound=True
+        )
+
+        # Allow inbound HTTP/HTTPS traffic to ALB
+        self.alb_security_group.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(80),
+            description="Allow HTTP traffic"
+        )
+        self.alb_security_group.add_ingress_rule(
+            peer=ec2.Peer.any_ipv4(),
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS traffic"
+        )
+
+        # Create Application Security Group
+        self.app_security_group = ec2.SecurityGroup(
+            self, "ApplicationSecurityGroup",
+            vpc=self.vpc,
+            description="Security group for Application servers",
+            allow_all_outbound=True
+        )
+
+        # Allow inbound traffic from ALB to Application
+        self.app_security_group.add_ingress_rule(
+            peer=self.alb_security_group,
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS traffic from ALB"
+        )
+
+        # Create Database Security Group
+        self.db_security_group = ec2.SecurityGroup(
+            self, "DatabaseSecurityGroup",
+            vpc=self.vpc,
+            description="Security group for RDS database",
+            allow_all_outbound=False  # Restrict all outbound traffic by default
+        )
+
+        # Allow inbound traffic from Application to Database
+        self.db_security_group.add_ingress_rule(
+            peer=self.app_security_group,
+            connection=ec2.Port.tcp(3306),  # MySQL/Aurora default port
+            description="Allow traffic from Application servers"
+        )
+
         # Output the VPC ID
         CfnOutput(
             self,
@@ -72,4 +122,29 @@ class VPCStack(Stack):
             value=','.join([subnet.subnet_id for subnet in self.vpc.isolated_subnets]),
             description="Isolated Subnets for RDS",
             export_name="IsolatedSubnets"
+        )
+
+        # Output Security Group IDs
+        CfnOutput(
+            self,
+            "ALBSecurityGroup",
+            value=self.alb_security_group.security_group_id,
+            description="Security Group ID for ALB",
+            export_name="ALBSecurityGroup"
+        )
+
+        CfnOutput(
+            self,
+            "AppSecurityGroup",
+            value=self.app_security_group.security_group_id,
+            description="Security Group ID for Application",
+            export_name="AppSecurityGroup"
+        )
+
+        CfnOutput(
+            self,
+            "DBSecurityGroup",
+            value=self.db_security_group.security_group_id,
+            description="Security Group ID for Database",
+            export_name="DBSecurityGroup"
         ) 
