@@ -42,7 +42,7 @@ class PipelineStack(Stack):
             branch="main",
             oauth_token=SecretValue.secrets_manager("github-token"),
             output=source_output,
-            trigger=codepipeline_actions.GitHubTrigger.POLL
+            trigger=codepipeline_actions.GitHubTrigger.WEBHOOK
         )
 
         # Add source stage
