@@ -40,7 +40,7 @@ class VPCStack(Stack):
 
         # Create ALB Security Group
         self.alb_security_group = ec2.SecurityGroup(
-            self, "ALBSecurityGroup",
+            self, "ALBSG",
             vpc=self.vpc,
             description="Security group for Application Load Balancer",
             allow_all_outbound=True
