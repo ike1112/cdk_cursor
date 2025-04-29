@@ -94,7 +94,7 @@ class PipelineStack(Stack):
                     "install": {
                         "runtime-versions": {
                             "python": "3.11",
-                            "nodejs": "18"
+                            "nodejs": "22"
                         },
                         "commands": [
                             "npm install -g aws-cdk",
