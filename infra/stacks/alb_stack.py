@@ -33,7 +33,7 @@ class ALBStack(Stack):
             vpc=vpc,
             port=80,
             protocol=elbv2.ApplicationProtocol.HTTP,
-            target_type=elbv2.TargetType.IP,
+            target_type=elbv2.TargetType.INSTANCE,
             health_check=elbv2.HealthCheck(
                 path="/",
                 port="80",

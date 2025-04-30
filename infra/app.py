@@ -38,20 +38,20 @@ alb_stack = ALBStack(app, "ALBStack",
 )
 
 # Deploy ASG Stack
-# asg_stack = ASGStack(app, "ASGStack",
-#     vpc=vpc_stack.vpc,
-#     target_group=alb_stack.target_group,
-#     app_security_group=vpc_stack.app_security_group,
-#     env=cdk.Environment(
-#         account=os.getenv('CDK_DEFAULT_ACCOUNT'),
-#         region=os.getenv('CDK_DEFAULT_REGION')
-#     )
-# )
+asg_stack = ASGStack(app, "ASGStack",
+    vpc=vpc_stack.vpc,
+    target_group=alb_stack.target_group,
+    app_security_group=vpc_stack.app_security_group,
+    env=cdk.Environment(
+        account=os.getenv('CDK_DEFAULT_ACCOUNT'),
+        region=os.getenv('CDK_DEFAULT_REGION')
+    )
+)
 
 # Add dependencies
 rds_stack.add_dependency(vpc_stack)
 alb_stack.add_dependency(vpc_stack)
-# asg_stack.add_dependency(alb_stack)
+asg_stack.add_dependency(alb_stack)
 
 # Deploy Pipeline Stack
 pipeline_stack = PipelineStack(app, "PipelineStack",
