@@ -21,33 +21,35 @@ class ALBStack(Stack):
             vpc=vpc,
             internet_facing=True,
             security_group=alb_sg,
-            # put this ALB in the public subnets created in the VPC Stack
             vpc_subnets=ec2.SubnetSelection(
                 subnets=vpc.public_subnets
             )
         )
 
-        # Create Target Group
+        # Create target group with minimal health check settings
         self.target_group = elbv2.ApplicationTargetGroup(
             self, "DefaultTargetGroup",
             vpc=vpc,
-            port=80,
+            port=8443,
             protocol=elbv2.ApplicationProtocol.HTTP,
             target_type=elbv2.TargetType.INSTANCE,
             health_check=elbv2.HealthCheck(
-                path="/",
-                port="80",
+                enabled=True,
                 protocol=elbv2.Protocol.HTTP,
-                healthy_http_codes="200",
-                interval=Duration.seconds(30),
-                timeout=Duration.seconds(5)
+                healthy_threshold_count=5,
+                unhealthy_threshold_count=2,
+                timeout=Duration.seconds(10),
+                interval=Duration.seconds(60),
+                path="/",
+                port="8443"
             )
         )
 
-        # Add HTTP listener
+        # Add HTTP listener with target group
         http_listener = self.alb.add_listener(
             "HttpListener",
             port=80,
+            open=True,
             default_target_groups=[self.target_group]
         )
 

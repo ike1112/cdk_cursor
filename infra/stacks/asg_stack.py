@@ -34,7 +34,7 @@ class ASGStack(Stack):
         #    - Install/update software
         #    - Configure system settings
         #    - Run administrative commands
-        role = iam.Role(
+        ec2_role = iam.Role(
             self, "AppServerRole",
             assumed_by=iam.ServicePrincipal("ec2.amazonaws.com")
         )
@@ -44,23 +44,20 @@ class ASGStack(Stack):
         # - SSH key management
         # - Opening port 22 in security groups
         # - Direct internet access for management
-        role.add_managed_policy(
+        # attach the AWS managed policy for SSM
+        ec2_role.add_managed_policy(
             iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore")
         )
 
-        # Add S3 read access for the specific bucket
-        role.add_to_policy(iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=["s3:GetObject"],
-            resources=["arn:aws:s3:::vpcbucket100/*"]
-        ))
+        # Add RDS full access
+        ec2_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonRDSFullAccess")
+        )
 
-        # Add RDS policy to allow describing DB clusters
-        role.add_to_policy(iam.PolicyStatement(
-            effect=iam.Effect.ALLOW,
-            actions=["rds:DescribeDBClusters"],
-            resources=["*"]
-        ))
+        # Add S3 full access
+        ec2_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3FullAccess")
+        )
 
         # Get the absolute path to userdata.sh
         current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -83,9 +80,17 @@ class ASGStack(Stack):
             machine_image=ec2.AmazonLinuxImage(
                 generation=ec2.AmazonLinuxGeneration.AMAZON_LINUX_2023
             ),
-            role=role,
+            role=ec2_role,
             user_data=ec2_user_data,
             security_group=app_security_group
+        )
+
+        # Add CloudWatch logging to the launch template
+        launch_template.user_data.add_commands(
+            "yum install -y aws-cfn-bootstrap",
+            "yum install -y amazon-cloudwatch-agent",
+            "systemctl enable amazon-cloudwatch-agent",
+            "systemctl start amazon-cloudwatch-agent"
         )
 
         # Create Auto Scaling Group
@@ -108,9 +113,9 @@ class ASGStack(Stack):
             # Starts with 1 instance and scales based on demand
             desired_capacity=1,
             # Health check settings for the ALB to monitor instance health
-            # Grace period gives instance 60 seconds to start up before checking
+            # Grace period gives instance 300 seconds to start up before checking
             health_check=autoscaling.HealthCheck.elb(
-                grace=Duration.seconds(60)
+                grace=Duration.seconds(300)
             ),
             # Cooldown period between scaling activities (in seconds)
             # Prevents rapid scaling up/down by waiting 5 minutes between actions

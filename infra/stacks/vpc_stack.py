@@ -52,11 +52,7 @@ class VPCStack(Stack):
             connection=ec2.Port.tcp(80),
             description="Allow HTTP traffic"
         )
-        self.alb_security_group.add_ingress_rule(
-            peer=ec2.Peer.any_ipv4(),
-            connection=ec2.Port.tcp(443),
-            description="Allow HTTPS traffic"
-        )
+       
 
         # Create Application Security Group
         self.app_security_group = ec2.SecurityGroup(
@@ -69,9 +65,31 @@ class VPCStack(Stack):
         # Allow inbound traffic from ALB to Application
         self.app_security_group.add_ingress_rule(
             peer=self.alb_security_group,
-            connection=ec2.Port.tcp(443),
-            description="Allow HTTPS traffic from ALB"
+            connection=ec2.Port.tcp(8443),
+            description="Allow HTTPs traffic from ALB"
         )
+
+        # # Add explicit outbound rules for better control
+        # self.app_security_group.add_egress_rule(
+        #     peer=ec2.Peer.any_ipv4(),
+        #     connection=ec2.Port.tcp(80),
+        #     description="Allow outbound HTTP traffic"
+        # )
+        # self.app_security_group.add_egress_rule(
+        #     peer=ec2.Peer.any_ipv4(),
+        #     connection=ec2.Port.tcp(443),
+        #     description="Allow outbound HTTPS traffic"
+        # )
+        # self.app_security_group.add_egress_rule(
+        #     peer=ec2.Peer.any_ipv4(),
+        #     connection=ec2.Port.tcp(53),
+        #     description="Allow outbound DNS traffic"
+        # )
+        # self.app_security_group.add_egress_rule(
+        #     peer=ec2.Peer.any_ipv4(),
+        #     connection=ec2.Port.udp(53),
+        #     description="Allow outbound DNS traffic"
+        # )
 
         # Create Database Security Group
         self.db_security_group = ec2.SecurityGroup(
